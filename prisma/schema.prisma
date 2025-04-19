@@ -1,0 +1,71 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_URI")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  email    String       @unique
+  password String?
+  name     String
+  role     EnumRoleUser @default(EMPLOYEE)
+
+  tasks          Task[]
+  boards         Board[] @relation(name: "BoardToUser")
+  authoredBoards Board[] @relation(name: "BoardToAuthor")
+
+  @@map("user")
+}
+
+model Task {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  title       String
+  description String?
+  deadline    DateTime
+  status      EnumTaskStatus @default(IN_PROGRESS)
+
+  users   User[]
+  board   Board? @relation(fields: [boardId], references: [id])
+  boardId String? @map("board_id")
+
+  @@map("task")
+}
+
+model Board {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  title          String
+  description    String?
+  dateOfCreation DateTime @default(now()) @map("date_of_creation")
+
+  author   User   @relation(name: "BoardToAuthor", fields: [authorId], references: [id])
+  authorId String @map("author_id")
+
+  users User[] @relation(name: "BoardToUser")
+  tasks Task[]
+
+  @@map("board")
+}
+
+enum EnumTaskStatus {
+  IN_PROGRESS
+  DONE
+}
+
+enum EnumRoleUser {
+  ADMIN
+  EMPLOYEE
+}
